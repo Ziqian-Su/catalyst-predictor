@@ -10,6 +10,7 @@
 
 ## 模块架构
 
+```
 catalyst_predictor/
 ├── config/
 │   └── default_config.py          # 集中式参数配置
@@ -32,7 +33,7 @@ catalyst_predictor/
 ├── README.md                      # 项目说明
 ├── requirements.txt               # 依赖列表
 └── LICENSE                        # 开源许可证
-
+```
 ## 快速开始
 
 ### 环境要求
