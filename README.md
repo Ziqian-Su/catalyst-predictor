@@ -42,11 +42,11 @@ catalyst_predictor/
 - 依赖包：numpy, pandas, scikit-learn, xgboost, matplotlib, shap, scipy
 
 ### 安装
-
-git clone https://github.com/xxx/catalyst-predictor.git
+'''
+git clone https://github.com/Ziqian-Su/catalyst-predictor.git
 cd catalyst-predictor
 pip install -r requirements.txt
-
+'''
 ### 运行
 
 1. 打开 examples/run_full_pipeline.py
