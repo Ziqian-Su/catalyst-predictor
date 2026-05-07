@@ -16,29 +16,25 @@ import xgboost as xgb
 from scipy.stats import uniform, randint
 
 
-def optimize_xgboost(X_train, y_train, random_state=42, n_iter=60):
-    """
-    XGBoost超参数优化
+def optimize_xgboost(X_train, y_train, random_state=42, n_iter=60, search_space=None):
+    if search_space is None:
+        search_space = {
+            'n_estimators': (300, 500), 'max_depth': (6, 10),
+            'learning_rate': (0.03, 0.08), 'subsample': (0.75, 0.2),
+            'colsample_bytree': (0.75, 0.2), 'gamma': (0, 0.1),
+            'reg_alpha': (0.05, 0.2), 'reg_lambda': (0.5, 0.8),
+        }
     
-    参数：
-        X_train: 训练集特征
-        y_train: 训练集目标
-        random_state: 随机种子
-        n_iter: 随机搜索迭代次数
-    
-    返回：
-        best_model: 最优XGBoost模型
-    """
     param_dist = {
-        'n_estimators': randint(300, 500),
-        'max_depth': randint(6, 10),
-        'learning_rate': uniform(0.03, 0.08),
-        'subsample': uniform(0.75, 0.2),
-        'colsample_bytree': uniform(0.75, 0.2),
-        'gamma': uniform(0, 0.1),
+        'n_estimators': randint(*search_space['n_estimators']),
+        'max_depth': randint(*search_space['max_depth']),
+        'learning_rate': uniform(*search_space['learning_rate']),
+        'subsample': uniform(*search_space['subsample']),
+        'colsample_bytree': uniform(*search_space['colsample_bytree']),
+        'gamma': uniform(*search_space['gamma']),
         'min_child_weight': randint(2, 5),
-        'reg_alpha': uniform(0.05, 0.2),
-        'reg_lambda': uniform(0.5, 0.8)
+        'reg_alpha': uniform(*search_space['reg_alpha']),
+        'reg_lambda': uniform(*search_space['reg_lambda']),
     }
     
     model = xgb.XGBRegressor(
@@ -58,25 +54,20 @@ def optimize_xgboost(X_train, y_train, random_state=42, n_iter=60):
     return search.best_estimator_
 
 
-def optimize_random_forest(X_train, y_train, random_state=42, n_iter=40):
-    """
-    随机森林超参数优化
+def optimize_random_forest(X_train, y_train, random_state=42, n_iter=40, search_space=None):
+    if search_space is None:
+        search_space = {
+            'n_estimators': (80, 150), 'max_depth': (4, 8),
+            'min_samples_split': (5, 10), 'min_samples_leaf': (3, 6),
+            'max_features': ['sqrt', 0.4],
+        }
     
-    参数：
-        X_train: 训练集特征
-        y_train: 训练集目标
-        random_state: 随机种子
-        n_iter: 随机搜索迭代次数
-    
-    返回：
-        best_model: 最优随机森林模型
-    """
     param_dist = {
-        'n_estimators': randint(80, 150),
-        'max_depth': randint(4, 8),
-        'min_samples_split': randint(5, 10),
-        'min_samples_leaf': randint(3, 6),
-        'max_features': ['sqrt', 0.4]
+        'n_estimators': randint(*search_space['n_estimators']),
+        'max_depth': randint(*search_space['max_depth']),
+        'min_samples_split': randint(*search_space['min_samples_split']),
+        'min_samples_leaf': randint(*search_space['min_samples_leaf']),
+        'max_features': search_space['max_features'],
     }
     
     model = RandomForestRegressor(random_state=random_state, n_jobs=-1)
@@ -92,23 +83,16 @@ def optimize_random_forest(X_train, y_train, random_state=42, n_iter=40):
     return search.best_estimator_
 
 
-def optimize_svr(X_train, y_train, random_state=42, n_iter=50):
-    """
-    支持向量机超参数优化
+def optimize_svr(X_train, y_train, random_state=42, n_iter=50, search_space=None):
+    if search_space is None:
+        search_space = {
+            'C': (0.5, 80), 'gamma': (0.01, 0.15), 'epsilon': (0.05, 0.1),
+        }
     
-    参数：
-        X_train: 标准化后的训练集特征
-        y_train: 训练集目标
-        random_state: 随机种子
-        n_iter: 随机搜索迭代次数
-    
-    返回：
-        best_model: 最优SVR模型
-    """
     param_dist = {
-        'C': uniform(0.5, 80),
-        'gamma': uniform(0.01, 0.15),
-        'epsilon': uniform(0.05, 0.1)
+        'C': uniform(*search_space['C']),
+        'gamma': uniform(*search_space['gamma']),
+        'epsilon': uniform(*search_space['epsilon']),
     }
     
     model = SVR(kernel='rbf')
@@ -125,17 +109,6 @@ def optimize_svr(X_train, y_train, random_state=42, n_iter=50):
 
 
 def optimize_ridge(X_train, y_train, random_state=42):
-    """
-    岭回归超参数优化（网格搜索）
-    
-    参数：
-        X_train: 训练集特征
-        y_train: 训练集目标
-        random_state: 随机种子
-    
-    返回：
-        best_model: 最优岭回归模型
-    """
     alphas = np.logspace(-2, 1, 30)
     
     model = Ridge(random_state=random_state)
@@ -151,24 +124,20 @@ def optimize_ridge(X_train, y_train, random_state=42):
     return search.best_estimator_
 
 
-def optimize_mlp(X_train, y_train, random_state=42, n_iter=30):
-    """
-    多层感知机超参数优化
+def optimize_mlp(X_train, y_train, random_state=42, n_iter=30, search_space=None):
+    if search_space is None:
+        search_space = {
+            'hidden_layer_sizes': [(32,), (64,), (32, 16), (64, 32)],
+            'alpha': (0.01, 0.1),
+            'learning_rate_init': (0.001, 0.01),
+            'batch_size': [32, 64],
+        }
     
-    参数：
-        X_train: 标准化后的训练集特征
-        y_train: 训练集目标
-        random_state: 随机种子
-        n_iter: 随机搜索迭代次数
-    
-    返回：
-        best_model: 最优MLP模型
-    """
     param_dist = {
-        'hidden_layer_sizes': [(32,), (64,), (32, 16), (64, 32)],
-        'alpha': uniform(0.01, 0.1),
-        'learning_rate_init': uniform(0.001, 0.01),
-        'batch_size': [32, 64],
+        'hidden_layer_sizes': search_space['hidden_layer_sizes'],
+        'alpha': uniform(*search_space['alpha']),
+        'learning_rate_init': uniform(*search_space['learning_rate_init']),
+        'batch_size': search_space['batch_size'],
     }
     
     model = MLPRegressor(
@@ -192,24 +161,10 @@ def optimize_mlp(X_train, y_train, random_state=42, n_iter=30):
     return search.best_estimator_
 
 
-def train_all_models(X_train, y_train, random_state=42, cache_dir=None):
-    """
-    训练所有五种基模型，支持缓存加载
-    
-    参数：
-        X_train: 训练集特征（原始值）
-        y_train: 训练集目标
-        random_state: 随机种子
-        cache_dir: 缓存目录路径，如果为None则不缓存
-    
-    返回：
-        models: 模型字典
-        scaler: 标准化器
-    """
+def train_all_models(X_train, y_train, random_state=42, cache_dir=None, config=None):
     scaler = StandardScaler()
     X_train_s = scaler.fit_transform(X_train)
     
-    # 检查缓存
     if cache_dir:
         cache_file = os.path.join(cache_dir, 'trained_models.pkl')
         scaler_file = os.path.join(cache_dir, 'scaler.pkl')
@@ -224,24 +179,41 @@ def train_all_models(X_train, y_train, random_state=42, cache_dir=None):
             print("=" * 50)
             return models, scaler
     
+    if config:
+        xgb_n_iter = config.get('xgb_n_iter', 60)
+        rf_n_iter = config.get('rf_n_iter', 40)
+        svr_n_iter = config.get('svr_n_iter', 50)
+        mlp_n_iter = config.get('mlp_n_iter', 30)
+        xgb_search_space = config.get('xgb_search_space', None)
+        rf_search_space = config.get('rf_search_space', None)
+        svr_search_space = config.get('svr_search_space', None)
+        mlp_search_space = config.get('mlp_search_space', None)
+    else:
+        xgb_n_iter, rf_n_iter, svr_n_iter, mlp_n_iter = 60, 40, 50, 30
+        xgb_search_space = rf_search_space = svr_search_space = mlp_search_space = None
+    
     print("=" * 50)
     print("未发现缓存，开始训练模型...")
     print("=" * 50)
     
     print("\n[1/5] XGBoost...")
-    xgb_model = optimize_xgboost(X_train, y_train, random_state)
+    xgb_model = optimize_xgboost(X_train, y_train, random_state, 
+                                  n_iter=xgb_n_iter, search_space=xgb_search_space)
     
     print("\n[2/5] 随机森林...")
-    rf_model = optimize_random_forest(X_train, y_train, random_state)
+    rf_model = optimize_random_forest(X_train, y_train, random_state, 
+                                       n_iter=rf_n_iter, search_space=rf_search_space)
     
     print("\n[3/5] 支持向量机（标准化数据）...")
-    svr_model = optimize_svr(X_train_s, y_train, random_state)
+    svr_model = optimize_svr(X_train_s, y_train, random_state, 
+                              n_iter=svr_n_iter, search_space=svr_search_space)
     
     print("\n[4/5] 岭回归...")
     ridge_model = optimize_ridge(X_train, y_train, random_state)
     
     print("\n[5/5] 神经网络（标准化数据）...")
-    mlp_model = optimize_mlp(X_train_s, y_train, random_state)
+    mlp_model = optimize_mlp(X_train_s, y_train, random_state, 
+                              n_iter=mlp_n_iter, search_space=mlp_search_space)
     
     models = {
         'XGBoost': xgb_model,
@@ -251,7 +223,6 @@ def train_all_models(X_train, y_train, random_state=42, cache_dir=None):
         '神经网络': mlp_model
     }
     
-    # 保存缓存
     if cache_dir:
         os.makedirs(cache_dir, exist_ok=True)
         with open(os.path.join(cache_dir, 'trained_models.pkl'), 'wb') as f:
