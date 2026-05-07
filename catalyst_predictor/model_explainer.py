@@ -12,12 +12,12 @@ import shap
 from scipy.stats import spearmanr
 
 
-def compute_shap_values(xgb_model, X_train, X_test, cache_dir=None):
+def compute_shap_values(model, X_train, X_test, cache_dir=None):
     """
     计算SHAP值（支持缓存）
     
     参数：
-        xgb_model: 训练好的XGBoost模型
+        model: 训练好的模型
         X_train: 训练集特征
         X_test: 测试集特征
         cache_dir: 缓存目录
@@ -33,23 +33,18 @@ def compute_shap_values(xgb_model, X_train, X_test, cache_dir=None):
     
     print("计算SHAP值（首次运行约2分钟）...")
     
-    # 创建背景数据
     background = shap.kmeans(X_train, 50)
     
-    # 包装函数避免兼容性问题
     def predict_func(X):
         if isinstance(X, pd.DataFrame):
-            return xgb_model.predict(X)
+            return model.predict(X)
         else:
-            return xgb_model.predict(pd.DataFrame(X, columns=X_train.columns))
+            return model.predict(pd.DataFrame(X, columns=X_train.columns))
     
-    # 创建解释器
     explainer = shap.KernelExplainer(predict_func, background.data)
     
-    # 计算SHAP值
     shap_values = explainer.shap_values(X_test)
     
-    # 保存缓存
     if cache_dir:
         os.makedirs(cache_dir, exist_ok=True)
         np.save(cache_file, shap_values)
@@ -58,16 +53,16 @@ def compute_shap_values(xgb_model, X_train, X_test, cache_dir=None):
     return shap_values
 
 
-def get_feature_importance(xgb_model, features):
+def get_feature_importance(model, features):
     """
-    获取Gain特征重要性
+    获取特征重要性
     
     返回：
         importance_df: 特征重要性DataFrame
     """
     importance_df = pd.DataFrame({
         'feature': features,
-        'importance': xgb_model.feature_importances_
+        'importance': model.feature_importances_
     }).sort_values('importance', ascending=False)
     
     return importance_df
@@ -100,7 +95,6 @@ def compare_importance_methods(gain_df, shap_df):
     shap_top10 = set(shap_df.head(10)['feature'])
     common = gain_top10 & shap_top10
     
-    # Spearman相关性
     common_all = list(set(gain_df.head(20)['feature']) & set(shap_df.head(20)['feature']))
     gain_rank = {f: i+1 for i, f in enumerate(gain_df['feature'])}
     shap_rank = {f: i+1 for i, f in enumerate(shap_df['feature'])}
@@ -130,7 +124,7 @@ def plot_importance_bar(gain_df, save_path, top_n=15, filename='fig_xgboost_impo
     ax.set_xticklabels(top_features['feature'].values, rotation=45, ha='right', fontsize=10)
     ax.set_ylabel('特征重要性 (Gain)', fontsize=12)
     ax.set_xlabel('特征名称', fontsize=12)
-    ax.set_title(f'XGBoost特征重要性（Top {top_n}）', fontsize=14, fontweight='bold', pad=20)
+    ax.set_title(f'特征重要性（Top {top_n}）', fontsize=14, fontweight='bold', pad=20)
     ax.grid(False)
     
     for bar, val in zip(bars, top_features['importance'].values):
@@ -156,7 +150,7 @@ def plot_shap_summary(shap_values, X_test, features, save_path,
     fig = plt.gcf()
     for ax in fig.get_axes():
         ax.grid(False)
-    plt.title('XGBoost SHAP摘要图', fontsize=14, fontweight='bold', pad=20)
+    plt.title('SHAP摘要图', fontsize=14, fontweight='bold', pad=20)
     plt.tight_layout()
     
     filepath = os.path.join(save_path, filename)
@@ -199,7 +193,7 @@ def print_importance_tables(gain_df, shap_df, top_n=10):
     打印特征重要性表
     """
     print("\n" + "=" * 60)
-    print(f"Gain特征重要性（Top {top_n}）")
+    print(f"特征重要性（Top {top_n}）")
     print("-" * 40)
     for i, (_, row) in enumerate(gain_df.head(top_n).iterrows(), 1):
         print(f"  {i:2d}. {row['feature']:<20} {row['importance']:.4f}")
